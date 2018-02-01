@@ -4,13 +4,13 @@
 #
 # This code is licensed under the MIT License (MIT).
 
-cmake_minimum_required( VERSION 2.8.12 )
+cmake_minimum_required(VERSION 3.0)
 
-project( optional_lite )
+# define the project
+project(optional)
 
-enable_testing()
+# create and configure the library target
+add_library(optional INTERFACE)
+SET(CMAKE_CXX_STANDARD 11)
+target_include_directories(optional INTERFACE include/nonstd)
 
-add_subdirectory( test )
-#add_subdirectory( example )
-
-# end of file
