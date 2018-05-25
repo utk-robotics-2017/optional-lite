@@ -4,13 +4,12 @@
 #
 # This code is licensed under the MIT License (MIT).
 
-cmake_minimum_required(VERSION 3.0)
-
-# define the project
-project(optional)
+cmake_minimum_required(VERSION 3.0.0)
+project(optional VERSION 3.1.2 LANGUAGES CXX)
+message("Building optional")
 
 # create and configure the library target
 add_library(optional INTERFACE)
-SET(CMAKE_CXX_STANDARD 11)
-target_include_directories(optional INTERFACE include/nonstd)
+SET(CMAKE_CXX_STANDARD 14)
+target_include_directories(optional INTERFACE include)
 
