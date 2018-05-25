@@ -7,7 +7,7 @@
 // optional lite is inspired on std::optional by Fernando Cacciola and Andrzej Krzemienski
 // and on expected lite by Martin Moene.
 
-#include "optional-lite.t.h"
+#include "optional-main.t.h"
 
 using nonstd::optional;
 using nonstd::nullopt;
@@ -717,7 +717,7 @@ CASE( "optional: Provides relational operators" )
 
 CASE( "optional: Provides mixed-type relational operators" )
 {
-    relop<char, int, double>( lest_env );
+    relop<char, int, long>( lest_env );
 }
 
 CASE( "make_optional: Allows to copy-construct optional" )
@@ -828,7 +828,7 @@ CASE( "make_optional: Allows to in-place move-construct optional from initialize
 
 struct Struct{ Struct(){} };
 
-#if !optional_FEATURE_MAX_ALIGN_HACK
+#if !defined(optional_FEATURE_MAX_ALIGN_HACK) || !optional_FEATURE_MAX_ALIGN_HACK
 
 #define optional_OUTPUT_ALIGNMENT_OF( type ) \
     "alignment_of<" #type ">: " <<  \

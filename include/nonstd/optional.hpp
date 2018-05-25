@@ -18,13 +18,22 @@
 #ifndef NONSTD_OPTIONAL_LITE_HPP
 #define NONSTD_OPTIONAL_LITE_HPP
 
-#define  optional_lite_VERSION "2.3.1"
+#define  optional_lite_VERSION "2.3.2"
 
-// Compiler detection:
+// Compiler detection (C++20 is speculative):
+// Note: MSVC supports C++14 since it supports C++17.
 
-#define optional_CPP11_OR_GREATER  ( __cplusplus >= 201103L )
-#define optional_CPP14_OR_GREATER  ( __cplusplus >= 201402L /* || _MSVC_LANG >= 201402L */ )
-#define optional_CPP17_OR_GREATER  ( __cplusplus >= 201703L    || _MSVC_LANG >= 201703L    )
+#ifdef _MSVC_LANG
+# define optional_MSVC_LANG  _MSVC_LANG
+#else
+# define optional_MSVC_LANG  0
+#endif
+
+#define optional_CPP11             (__cplusplus == 201103L )
+#define optional_CPP11_OR_GREATER  (__cplusplus >= 201103L || optional_MSVC_LANG >= 201103L )
+#define optional_CPP14_OR_GREATER  (__cplusplus >= 201402L || optional_MSVC_LANG >= 201703L )
+#define optional_CPP17_OR_GREATER  (__cplusplus >= 201703L || optional_MSVC_LANG >= 201703L )
+#define optional_CPP20_OR_GREATER  (__cplusplus >= 202000L || optional_MSVC_LANG >= 202000L )
 
 // use C++17 std::optional if available:
 
@@ -34,9 +43,9 @@
 # define optional_HAS_INCLUDE( arg )  0
 #endif
 
-#define optional_HAVE_STD_OPTIONAL  ( optional_HAS_INCLUDE( <optional> ) && optional_CPP17_OR_GREATER )
+#define optional_HAVE_STD_OPTIONAL  ( optional_CPP17_OR_GREATER && optional_HAS_INCLUDE( <optional> ) )
 
-#if optional_HAVE_STD_OPTIONAL  
+#if optional_HAVE_STD_OPTIONAL
 
 #include <optional>
 
@@ -85,45 +94,67 @@ namespace nonstd {
 # define optional_CONFIG_ALIGN_AS_FALLBACK  double
 #endif
 
+// Compiler warning suppression:
+
+#ifdef __clang__
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wundef"
+#elif defined __GNUC__
+# pragma GCC   diagnostic push
+# pragma GCC   diagnostic ignored "-Wundef"
+#endif
+
 // half-open range [lo..hi):
 #define optional_BETWEEN( v, lo, hi ) ( lo <= v && v < hi )
 
 #if defined(_MSC_VER) && !defined(__clang__)
-# define optional_COMPILER_MSVC_VERSION   (_MSC_VER / 100 - 5 - (_MSC_VER < 1900))
+# define optional_COMPILER_MSVC_VERSION   (_MSC_VER / 10 - 10 * ( 5 + (_MSC_VER < 1900)) )
 #else
 # define optional_COMPILER_MSVC_VERSION   0
 #endif
 
+#define optional_COMPILER_VERSION( major, minor, patch )  ( 10 * (10 * major + minor ) + patch )
+
 #if defined __GNUC__
-# define optional_COMPILER_GNUC_VERSION  __GNUC__
+# define optional_COMPILER_GNUC_VERSION   optional_COMPILER_VERSION(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)
 #else
-# define optional_COMPILER_GNUC_VERSION    0
+# define optional_COMPILER_GNUC_VERSION   0
 #endif
 
-#if optional_BETWEEN(optional_COMPILER_MSVC_VERSION, 7, 14 )
+#if defined __clang__
+# define optional_COMPILER_CLANG_VERSION  optional_COMPILER_VERSION(__clang_major__, __clang_minor__, __clang_patchlevel__)
+#else
+# define optional_COMPILER_CLANG_VERSION  0
+#endif
+
+#if optional_BETWEEN(optional_COMPILER_MSVC_VERSION, 70, 140 )
 # pragma warning( push )
 # pragma warning( disable: 4345 )   // initialization behavior changed
 #endif
 
-#if optional_BETWEEN(optional_COMPILER_MSVC_VERSION, 7, 15 )
+#if optional_BETWEEN(optional_COMPILER_MSVC_VERSION, 70, 150 )
 # pragma warning( push )
 # pragma warning( disable: 4814 )   // in C++14 'constexpr' will not imply 'const'
 #endif
 
+// Presence of language and library features:
+
+#define optional_HAVE(FEATURE) ( optional_HAVE_##FEATURE )
+
 // Presence of C++11 language features:
 
-#if optional_CPP11_OR_GREATER || optional_COMPILER_MSVC_VERSION >= 10
+#if optional_CPP11_OR_GREATER || optional_COMPILER_MSVC_VERSION >= 100
 # define optional_HAVE_AUTO  1
 # define optional_HAVE_NULLPTR  1
 # define optional_HAVE_STATIC_ASSERT  1
 #endif
 
-#if optional_CPP11_OR_GREATER || optional_COMPILER_MSVC_VERSION >= 12
+#if optional_CPP11_OR_GREATER || optional_COMPILER_MSVC_VERSION >= 120
 # define optional_HAVE_DEFAULT_FUNCTION_TEMPLATE_ARG  1
 # define optional_HAVE_INITIALIZER_LIST  1
 #endif
 
-#if optional_CPP11_OR_GREATER || optional_COMPILER_MSVC_VERSION >= 14
+#if optional_CPP11_OR_GREATER || optional_COMPILER_MSVC_VERSION >= 140
 # define optional_HAVE_ALIAS_TEMPLATE  1
 # define optional_HAVE_CONSTEXPR_11  1
 # define optional_HAVE_ENUM_CLASS  1
@@ -153,65 +184,65 @@ namespace nonstd {
 # define optional_HAVE_TR1_ADD_POINTER  1
 #endif
 
-#if optional_CPP11_OR_GREATER || optional_COMPILER_MSVC_VERSION >= 9
+#if optional_CPP11_OR_GREATER || optional_COMPILER_MSVC_VERSION >= 90
 # define optional_HAVE_TYPE_TRAITS  1
 # define optional_HAVE_STD_ADD_POINTER  1
 #endif
 
-#if optional_CPP11_OR_GREATER || optional_COMPILER_MSVC_VERSION >= 11
+#if optional_CPP11_OR_GREATER || optional_COMPILER_MSVC_VERSION >= 110
 # define optional_HAVE_ARRAY  1
 #endif
 
-#if optional_CPP11_OR_GREATER || optional_COMPILER_MSVC_VERSION >= 12
+#if optional_CPP11_OR_GREATER || optional_COMPILER_MSVC_VERSION >= 120
 # define optional_HAVE_CONDITIONAL  1
 #endif
 
-#if optional_CPP11_OR_GREATER || optional_COMPILER_MSVC_VERSION >= 14 || (optional_COMPILER_MSVC_VERSION >= 9 && _HAS_CPP0X)
+#if optional_CPP11_OR_GREATER || optional_COMPILER_MSVC_VERSION >= 140 || (optional_COMPILER_MSVC_VERSION >= 90 && _HAS_CPP0X)
 # define optional_HAVE_CONTAINER_DATA_METHOD  1
 #endif
 
-#if optional_CPP11_OR_GREATER || optional_COMPILER_MSVC_VERSION >= 12
+#if optional_CPP11_OR_GREATER || optional_COMPILER_MSVC_VERSION >= 120
 # define optional_HAVE_REMOVE_CV  1
 #endif
 
-#if optional_CPP11_OR_GREATER || optional_COMPILER_MSVC_VERSION >= 14
+#if optional_CPP11_OR_GREATER || optional_COMPILER_MSVC_VERSION >= 140
 # define optional_HAVE_SIZED_TYPES  1
 #endif
 
 // For the rest, consider VC14 as C++11 for optional-lite:
 
-#if optional_COMPILER_MSVC_VERSION >= 14
+#if optional_COMPILER_MSVC_VERSION >= 140
 # undef  optional_CPP11_OR_GREATER
 # define optional_CPP11_OR_GREATER  1
 #endif
 
 // C++ feature usage:
 
-#if optional_HAVE_CONSTEXPR_11
+#if optional_HAVE( CONSTEXPR_11 )
 # define optional_constexpr  constexpr
 #else
 # define optional_constexpr  /*constexpr*/
 #endif
 
-#if optional_HAVE_CONSTEXPR_14
+#if optional_HAVE( CONSTEXPR_14 )
 # define optional_constexpr14  constexpr
 #else
 # define optional_constexpr14  /*constexpr*/
 #endif
 
-#if optional_HAVE_NOEXCEPT
+#if optional_HAVE( NOEXCEPT )
 # define optional_noexcept  noexcept
 #else
 # define optional_noexcept  /*noexcept*/
 #endif
 
-#if optional_HAVE_NULLPTR
+#if optional_HAVE( NULLPTR )
 # define optional_nullptr  nullptr
 #else
 # define optional_nullptr  NULL
 #endif
 
-#if optional_HAVE_REF_QUALIFIER
+#if optional_HAVE( REF_QUALIFIER )
 # define optional_ref_qual  &
 # define optional_refref_qual  &&
 #else
@@ -225,13 +256,13 @@ namespace nonstd {
 # include <functional>
 #endif
 
-#if optional_HAVE_INITIALIZER_LIST
+#if optional_HAVE( INITIALIZER_LIST )
 # include <initializer_list>
 #endif
 
-#if optional_HAVE_TYPE_TRAITS
+#if optional_HAVE( TYPE_TRAITS )
 # include <type_traits>
-#elif optional_HAVE_TR1_TYPE_TRAITS
+#elif optional_HAVE( TR1_TYPE_TRAITS )
 # include <tr1/type_traits>
 #endif
 
@@ -239,7 +270,7 @@ namespace nonstd {
 
 namespace nonstd { namespace optional_lite { namespace detail {
 
-#if optional_HAVE_CONDITIONAL
+#if optional_HAVE( CONDITIONAL )
     using std::conditional;
 #else
     template< bool B, typename T, typename F > struct conditional              { typedef T type; };
@@ -252,10 +283,10 @@ namespace nonstd { namespace optional_lite { namespace detail {
 // in_place: code duplicated in any-lite, optional-lite, variant-lite:
 //
 
-#if ! nonstd_lite_HAVE_IN_PLACE_TYPES
+#ifndef nonstd_lite_HAVE_IN_PLACE_TYPES
 
-namespace nonstd { 
-    
+namespace nonstd {
+
 namespace detail {
 
 template< class T >
@@ -602,7 +633,7 @@ struct nullopt_t
     optional_constexpr nullopt_t( init ) {}
 };
 
-#if optional_HAVE_CONSTEXPR_11
+#if optional_HAVE( CONSTEXPR_11 )
 constexpr nullopt_t nullopt{ nullopt_t::init{} };
 #else
 // extra parenthesis to prevent the most vexing parse:
@@ -829,7 +860,7 @@ public:
         return contained.value();
     }
 
-#if optional_HAVE_REF_QUALIFIER
+#if optional_HAVE( REF_QUALIFIER )
 
     optional_constexpr14 value_type const && value() const optional_refref_qual
     {
@@ -915,7 +946,7 @@ private:
 template< typename T, typename U >
 inline optional_constexpr bool operator==( optional<T> const & x, optional<U> const & y )
 {
-    return bool(x) != bool(y) ? false : bool(x) == false ? true : *x == *y;
+    return bool(x) != bool(y) ? false : !bool( x ) ? true : *x == *y;
 }
 
 template< typename T, typename U >
@@ -1162,6 +1193,12 @@ public:
 } //namespace std
 
 #endif // optional_CPP11_OR_GREATER
+
+#ifdef __clang__
+# pragma clang diagnostic pop
+#elif defined __GNUC__
+# pragma GCC   diagnostic pop
+#endif
 
 #endif // have C++17 std::optional
 
